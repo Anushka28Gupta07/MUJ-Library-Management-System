@@ -1,106 +1,53 @@
+
+import sys
+from pathlib import Path
+
+# Add the project root so Python can find the backend folder
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+
 import streamlit as st
 from styles import apply_custom_styles
 from login import render_login
-import dashboard
-import books
-import members
-import issue_return
-import search
-import reports
-import master_data
+import dashboard, books, members, issue_return, search, reports, master_data, settings_page
 
-# Page configuration
-st.set_page_config(
-    page_title="Library Management System",
-    page_icon="📚",
-    layout="wide"
-)
+st.set_page_config(page_title="The Reading Room | Library Management", page_icon="📚", layout="wide", initial_sidebar_state="expanded")
 
-# Initialize Session States
-if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
+for key, value in {"authenticated": False, "current_page": "Dashboard", "username": None}.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
 
-if "current_page" not in st.session_state:
-    st.session_state["current_page"] = "Dashboard"
+apply_custom_styles()
 
-if "theme_mode" not in st.session_state:
-    st.session_state["theme_mode"] = "Dark"
-
-# Render Login if not logged in, otherwise render Portal with custom styles
 if not st.session_state["authenticated"]:
     render_login()
 else:
-    # Apply dashboard theme only when logged in
-    apply_custom_styles(theme=st.session_state["theme_mode"])
-
-    # Sidebar Header
-    st.sidebar.markdown("### 📚 **LMS Portal**")
-    st.sidebar.markdown(
-        f"""
-        <div style='background: rgba(255,255,255,0.06); padding: 8px 12px; border-radius: 6px; margin-bottom: 14px;'>
-            <span style='font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;'>Logged in as</span><br>
-            <strong style='font-size: 14px;'>{st.session_state.get('username', 'Admin')}</strong> 
-            <span style='font-size: 11px;'>• Chief Librarian</span>
-        </div>
-        """, 
-        unsafe_allow_html=True
-    )
-
-    nav_options = [
-        "Dashboard",
-        "Books",
-        "Members",
-        "Issue Book",
-        "Return Book",
-        "Search",
-        "Reports",
-        "Authors / Publishers / Categories"
-    ]
-
-    selected_nav = st.sidebar.radio(
-        "Navigation",
-        options=nav_options,
-        index=nav_options.index(st.session_state["current_page"]) if st.session_state["current_page"] in nav_options else 0,
-        label_visibility="collapsed"
-    )
-
-    st.session_state["current_page"] = selected_nav
-
-    st.sidebar.divider()
-
-    # Theme Switcher Control
-    col_t1, col_t2 = st.sidebar.columns([1, 1])
-    with col_t1:
-        if st.button("🌙 Dark", use_container_width=True):
-            st.session_state["theme_mode"] = "Dark"
-            st.rerun()
-    with col_t2:
-        if st.button("☀️ Light", use_container_width=True):
-            st.session_state["theme_mode"] = "Light"
+    with st.sidebar:
+        st.markdown("<div style='text-align:center;padding:.65rem 0 1rem'><div style='font-size:2.2rem'>♧</div><div style='font-family:Playfair Display,Georgia,serif;font-size:1.28rem;font-weight:700;line-height:1.2'>The Reading Room</div><div style='font-size:.72rem;letter-spacing:.12em;margin-top:.35rem;opacity:.75'>LIBRARY MANAGEMENT</div></div>", unsafe_allow_html=True)
+        st.markdown("<div style='background:rgba(255,255,255,.08);padding:.8rem;border-radius:10px;margin-bottom:1rem'><div style='font-size:.68rem;letter-spacing:.12em;opacity:.7'>SIGNED IN AS</div><strong>" + str(st.session_state.get('username') or 'Librarian') + "</strong><div style='font-size:.78rem;opacity:.78'>Chief Librarian</div></div>", unsafe_allow_html=True)
+        nav = ["Dashboard", "Books", "Members", "Issue / Return", "Search", "Reports", "Authors / Publishers / Categories", "Settings"]
+        icons = {"Dashboard":"⌂", "Books":"▤", "Members":"♙", "Issue / Return":"⇄", "Search":"⌕", "Reports":"▥", "Authors / Publishers / Categories":"✧", "Settings":"⚙"}
+        current = st.session_state.get("current_page", "Dashboard")
+        selected = st.radio("Navigate", nav, index=nav.index(current) if current in nav else 0, format_func=lambda x: f"{icons[x]}   {x}", label_visibility="collapsed")
+        st.session_state["current_page"] = selected
+        st.markdown("<div style='height:1px;background:rgba(255,255,255,.2);margin:1rem 0'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:.76rem;opacity:.72;line-height:1.6'>A quieter place for good books.<br/>Manage your collection with care.</div>", unsafe_allow_html=True)
+        if st.button("↪  Sign out", use_container_width=True):
+            st.session_state["authenticated"] = False
+            st.session_state["username"] = None
+            st.session_state["current_page"] = "Dashboard"
             st.rerun()
 
-    # Logout
-    st.sidebar.write("")
-    if st.sidebar.button("Logout", use_container_width=True):
-        st.session_state["authenticated"] = False
-        st.session_state["username"] = None
-        st.session_state["current_page"] = "Dashboard"
-        st.rerun()
-
-    # Route to screen module
-    if selected_nav == "Dashboard":
-        dashboard.render_dashboard()
-    elif selected_nav == "Books":
-        books.render_books()
-    elif selected_nav == "Members":
-        members.render_members()
-    elif selected_nav == "Issue Book":
-        issue_return.render_issue()
-    elif selected_nav == "Return Book":
-        issue_return.render_return()
-    elif selected_nav == "Search":
-        search.render_search()
-    elif selected_nav == "Reports":
-        reports.render_reports()
-    elif selected_nav == "Authors / Publishers / Categories":
-        master_data.render_master_data()
+    routes = {
+        "Dashboard": dashboard.render_dashboard,
+        "Books": books.render_books,
+        "Members": members.render_members,
+        "Issue / Return": issue_return.render_issue_return,
+        "Search": search.render_search,
+        "Reports": reports.render_reports,
+        "Authors / Publishers / Categories": master_data.render_master_data,
+        "Settings": settings_page.render_settings,
+    }
+    routes[selected]()
