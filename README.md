@@ -1,66 +1,134 @@
+
 # 📚 Library Management System (LMS)
 
-An enterprise-grade, normalized relational database management system built with **MySQL**, **Python**, and a modular **Streamlit** frontend. Designed for academic demonstration of relational integrity constraints, ACID transactions, and role-based library circulation.
-
----
+A database-driven Library Management System built using **MySQL, Python, and Streamlit** for the CSC2131 RDBMS laboratory project. It demonstrates relational database design, data integrity, book circulation, member management, and reporting.
 
 ## 🌟 Key Features
 
-- **Role-Based Authentication:** Distinct portal sessions for Administrators/Librarians and Members.
-- **Dynamic Catalog Management:** Real-time catalog view, multi-author book registration, and edition tracking.
-- **Physical Inventory & Copy Tracking:** Tracks specific book copy IDs and their discrete circulation lifecycles (`Available`, `Issued`, `Maintenance`, `Lost`, `Damaged`).
-- **Circulation Management:** Multi-step loan dispatching, automated due date enforcement, and return reconciliation.
-- **Auditing & Advanced Reports:** Live audit tables for overdue loans, lost inventory replacement fees, and circulation analytics.
-- **Adaptive UI:** Responsive portal supporting both Light and Dark display modes with high-contrast data visualization.
+* **Admin Login:** Demo administrator login for accessing the application.
+* **Book Management:** Add, search, edit, and delete book records.
+* **Member Management:** Register members, view details, update records, and delete eligible members.
+* **Inventory Tracking:** Track individual physical copies and their availability.
+* **Issue and Return:** Issue available copies, record returns, and calculate overdue fines.
+* **Reports:** View issued books, overdue loans, most-issued books, and fine reports.
+* **Master Data Management:** Add authors, publishers, and book categories.
+* **Dashboard:** View library statistics and books by category.
 
----
+## 🏛️ Database Architecture
 
-## 🏛️ Database Architecture & Normalization
+The database is named `LibraryManagementDB` and contains eight relational tables:
 
-The relational backend is decomposed to **Third Normal Form (3NF)** across 8 tables to eliminate data redundancy and anomalies:
+1. **Publisher** — Stores publisher details.
+2. **Category** — Organizes books by subject.
+3. **Author** — Stores author information.
+4. **Book** — Stores book details, ISBN, publication year, publisher, and category.
+5. **Book_Author** — Links books and authors through a many-to-many relationship.
+6. **Member** — Stores library member details.
+7. **Book_Copy** — Tracks individual physical copies and their status.
+8. **Loan** — Records issue dates, due dates, returns, and fines.
 
-1. **`Publisher`** — Maintains unique publication entities (`PublisherID`, `PublisherName`, `Address`, `Contact`).
-2. **`Category`** — Subject classifications (`CategoryID`, `CategoryName`, `ShelfLocation`).
-3. **`Author`** — Individual author biographical records (`AuthorID`, `AuthorName`, `Nationality`).
-4. **`Book`** — Abstract conceptual book title (`BookID`, `Title`, `ISBN` [UNIQUE], `PublicationYear`, `PublisherID` [FK], `CategoryID` [FK]).
-5. **`Book_Author`** — Resolves the Many-to-Many ($M:N$) relationship between `Book` and `Author`.
-6. **`Book_Copy`** — Tracks discrete physical barcode items ($1:N$ from `Book`) and their status (`CopyID`, `BookID` [FK], `CopyStatus`).
-7. **`Member`** — Reader profile registry (`MemberID`, `FullName`, `Email` [UNIQUE], `Phone`, `MembershipDate`).
-8. **`Loan`** — Records borrowing events and tracks ACID circulation transactions (`LoanID`, `CopyID` [FK], `MemberID` [FK], `IssueDate`, `DueDate`, `ReturnDate`, `FineAmount`).
+### Database Concepts Demonstrated
 
-### Integrity Constraints & ACID Enforcement
-- **Domain Constraints:** `PublicationYear BETWEEN 1450 AND 2100`, `FineAmount >= 0.00`.
-- **Referential Integrity:** Foreign keys enforce strict cascades on categorization and restrictions on active loan deletions.
-- **ACID Transactions:** Checkout and copy disposal operations use explicit transaction boundaries (`BEGIN` ... `COMMIT` / `ROLLBACK`) to prevent inconsistent copy states.
+* Primary keys and foreign keys
+* One-to-many and many-to-many relationships
+* Referential integrity and data validation
+* Normalized relational database design
+* Transactions for book issue and return operations
+* SQL queries for searching, reporting, and overdue tracking
 
----
+## 💰 Library Rules
+
+* Standard loan period: **14 days**
+* Overdue fine: **₹2 per overdue day**
+* Only available book copies can be issued.
+* Book and member deletion is restricted when loan history exists.
+* Returning a book updates the loan record and makes the physical copy available again.
 
 ## 📁 Repository Structure
 
 ```text
 library-management-system/
-│
-├── database/
-│   ├── schema.sql           # DDL: Table definitions, constraints, foreign keys
-│   ├── sample_database.sql  # DML: Mock seed dataset for academic demo
-│   └── queries.sql          # Core analytical, audit, and search SQL queries
-│
 ├── backend/
-│   ├── config.py            # MySQL database connection parameters
-│   ├── db.py                # Database transactions, stored procedures, & queries
-│   └── __init__.py
-│
+│   ├── __init__.py
+│   ├── config.py
+│   └── db.py
+├── database/
+│   ├── schema.sql
+│   ├── sample_data.sql
+│   └── queries.sql
 ├── frontend/
-│   ├── app.py               # Main application routing and navigation logic
-│   ├── login.py             # Authentication screen with custom background
-│   ├── styles.py            # Adaptive theme engine (Dark / Light mode CSS)
-│   ├── dashboard.py         # Summary metrics and catalog visualization
-│   ├── books.py             # Book catalog CRUD & Lost/Damaged Copy tracking
-│   ├── members.py           # Member roster registration and profile updates
-│   ├── issue_return.py      # Circulation desk (Borrowing & Return transactions)
-│   ├── search.py            # Multi-attribute catalog lookup engine
-│   ├── reports.py           # Overdue audits, fines, and borrowing reports
-│   └── master_data.py       # Master author, publisher, and category tables
-│
-├── requirements.txt         # Project dependencies
-└── README.md                # Project documentation
+│   └── app.py
+└── requirements.txt
+```
+
+## 🛠️ Technologies Used
+
+* **Database:** MySQL
+* **Programming Language:** Python
+* **Frontend:** Streamlit
+* **Database Connector:** MySQL Connector/Python
+* **Version Control:** Git and GitHub
+
+## 🚀 Setup and Installation
+
+### Prerequisites
+
+Install Python and MySQL Server on your computer.
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/vrindainink/library-management-system.git
+cd library-management-system
+```
+
+### 2. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Create and populate the database
+
+Open MySQL Workbench or a MySQL command-line client and execute the SQL files in this order:
+
+1. `database/schema.sql`
+2. `database/sample_data.sql`
+
+Execute `database/queries.sql` separately when you want to explore the project's SQL queries.
+
+### 4. Configure the database connection
+
+The application reads these environment variables:
+
+* `DB_HOST` — defaults to `localhost`
+* `DB_USER` — defaults to `root`
+* `DB_PASSWORD` — defaults to an empty password
+* `DB_NAME` — defaults to `LibraryManagementDB`
+
+Set them to match your local MySQL configuration.
+
+### 5. Launch the application
+
+Run this command from the repository root:
+
+```bash
+streamlit run frontend/app.py
+```
+
+Streamlit will provide a local URL where you can access the application.
+
+## 🔐 Demo Login
+
+* **Username:** `admin`
+* **Password:** `admin123`
+
+These are demonstration credentials defined in the application code. Change them before using the application beyond a classroom demonstration.
+
+## 🎓 Project Purpose
+
+This project demonstrates the practical application of relational database concepts, SQL operations, integrity constraints, transaction handling, and Python–MySQL integration in a library environment.
+
+---
+
+**Academic Project:** CSC2131 — Relational Database Management Systems (RDBMS)
