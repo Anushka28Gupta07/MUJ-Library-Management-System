@@ -1,146 +1,94 @@
 import streamlit as st
-import pandas as pd
 from backend import db
+from frontend.styles import page_header, book_card
+
 
 def render_books():
-    st.title("📖 Book Catalog Management")
-
-    # Initial catalog data
-    default_books = [
-        {"BookID": 101, "Title": "The C Programming Language", "ISBN": "9780131103627", "Author": "Brian Kernighan", "Category": "Programming", "Publisher": "Pearson", "Year": 1988, "Available Copies": 1},
-        {"BookID": 102, "Title": "Introduction to Algorithms", "ISBN": "9780262046305", "Author": "Thomas Cormen", "Category": "Programming", "Publisher": "McGraw Hill", "Year": 2022, "Available Copies": 0},
-        {"BookID": 103, "Title": "Database System Concepts", "ISBN": "9780078022159", "Author": "Abraham Silberschatz", "Category": "Database Systems", "Publisher": "McGraw Hill", "Year": 2019, "Available Copies": 1},
-        {"BookID": 104, "Title": "Clean Code", "ISBN": "9780132350884", "Author": "Robert Martin", "Category": "Programming", "Publisher": "Pearson", "Year": 2008, "Available Copies": 1},
-        {"BookID": 105, "Title": "Mathematics for Engineers", "ISBN": "9789355012345", "Author": "R. D. Sharma", "Category": "Mathematics", "Publisher": "Pearson", "Year": 2023, "Available Copies": 1},
-        {"BookID": 106, "Title": "The Pragmatic Programmer", "ISBN": "9780135957059", "Author": "Robert Martin", "Category": "Programming", "Publisher": "OReilly Media", "Year": 2019, "Available Copies": 0}
-    ]
-
-    # Initial lost/damaged tracking
-    default_lost_records = [
-        {"CopyID": 1005, "Book Title": "The Pragmatic Programmer", "Status": "Lost", "Reported By": "Ayushi Verma", "Report Date": "2026-10-02", "Replacement Fine": "₹750.00"},
-        {"CopyID": 1008, "Book Title": "Introduction to Algorithms", "Status": "Damaged", "Reported By": "Rahul Sharma", "Report Date": "2026-10-10", "Replacement Fine": "₹300.00"}
-    ]
-
-    if "books_list" not in st.session_state:
-        st.session_state["books_list"] = default_books
-
-    if "lost_books_list" not in st.session_state:
-        st.session_state["lost_books_list"] = default_lost_records
-
-    # 4 clean tabs including Lost & Damaged
-    tab1, tab2, tab3, tab4 = st.tabs([
-        "📚 View All Books", 
-        "⚠️ Lost & Damaged Copies", 
-        "➕ Add New Book", 
-        "✏️ Edit / Delete"
-    ])
-
-    # TAB 1: VIEW ALL BOOKS
-    with tab1:
-        st.subheader("All Registered Titles")
-        df = pd.DataFrame(st.session_state["books_list"])
-        st.dataframe(df, use_container_width=True, hide_index=True)
-
-    # TAB 2: LOST & DAMAGED COPIES
-    with tab2:
-        st.subheader("⚠️ Lost & Damaged Copies Registry")
-        st.write("Track unreturned, missing, or compromised physical inventory copies.")
-
-        # Display current lost records
-        df_lost = pd.DataFrame(st.session_state["lost_books_list"])
-        st.dataframe(df_lost, use_container_width=True, hide_index=True)
-
-        st.divider()
-        st.markdown("#### 📝 Report a Physical Copy as Lost / Damaged")
-
-        with st.form("report_lost_form", clear_on_submit=True):
-            col_l1, col_l2 = st.columns(2)
-            with col_l1:
-                book_names = [b["Title"] for b in st.session_state["books_list"]]
-                selected_lost_book = st.selectbox("Select Book Title", book_names)
-                copy_id = st.number_input("Physical Copy ID *", min_value=1001, max_value=9999, value=1009)
-                reported_by = st.selectbox("Borrower / Reporter", [
-                    "Ayushi Verma", "Rahul Sharma", "Priya Singh", "Arjun Mehta", "Neha Gupta", "Internal Inventory Audit"
-                ])
-            with col_l2:
-                incident_type = st.selectbox("Incident Type", ["Lost", "Damaged", "Subject for Replacement"])
-                replacement_fee = st.number_input("Assessed Replacement Fine (₹)", min_value=0, max_value=5000, value=500, step=50)
-
-            submitted_lost = st.form_submit_button("Record Incident & Update Inventory", use_container_width=True)
-
-            if submitted_lost:
-                # Add to lost registry
-                new_lost_entry = {
-                    "CopyID": int(copy_id),
-                    "Book Title": selected_lost_book,
-                    "Status": incident_type,
-                    "Reported By": reported_by,
-                    "Report Date": "2026-10-17",
-                    "Replacement Fine": f"₹{replacement_fee:.2f}"
-                }
-                st.session_state["lost_books_list"].append(new_lost_entry)
-
-                # Deduct 1 available copy if available
-                for b in st.session_state["books_list"]:
-                    if b["Title"] == selected_lost_book and b["Available Copies"] > 0:
-                        b["Available Copies"] -= 1
-                        break
-
-                st.success(f"Copy #{copy_id} flagged as '{incident_type}'. Fine of ₹{replacement_fee:.2f} billed to {reported_by}.")
-                st.rerun()
-
-    # TAB 3: ADD BOOK
-    with tab3:
-        st.subheader("Add a New Book to the Database")
-        with st.form("add_book_form", clear_on_submit=True):
-            col_a, col_b = st.columns(2)
-            with col_a:
-                title = st.text_input("Book Title *")
-                isbn = st.text_input("ISBN (Unique) *")
-                year = st.number_input("Publication Year", min_value=1450, max_value=2100, value=2024)
-            with col_b:
-                publisher = st.selectbox("Publisher", ["Pearson", "McGraw Hill", "OReilly Media"])
-                category = st.selectbox("Category", ["Programming", "Mathematics", "Database Systems", "Fiction"])
-                authors = st.multiselect("Author(s)", ["Brian Kernighan", "Thomas Cormen", "Abraham Silberschatz", "Robert Martin", "R. D. Sharma", "J.K. Rowling"])
-                copies = st.number_input("Initial Physical Copies", min_value=1, max_value=20, value=2)
-
-            submitted = st.form_submit_button("Add Book", use_container_width=True)
-            if submitted:
-                if not title or not isbn or not authors:
-                    st.error("Please fill in Title, ISBN, and at least one Author.")
-                else:
-                    new_id = max([b["BookID"] for b in st.session_state["books_list"]], default=100) + 1
-                    new_entry = {
-                        "BookID": new_id,
-                        "Title": title,
-                        "ISBN": isbn,
-                        "Author": ", ".join(authors),
-                        "Category": category,
-                        "Publisher": publisher,
-                        "Year": int(year),
-                        "Available Copies": int(copies)
-                    }
-                    st.session_state["books_list"].append(new_entry)
-                    st.success(f"Book '{title}' registered with ID #{new_id}!")
-                    st.rerun()
-
-    # TAB 4: EDIT / DELETE
-    with tab4:
-        st.subheader("Edit or Remove a Book")
-        book_titles = [b["Title"] for b in st.session_state["books_list"]]
-        selected_title = st.selectbox("Select Book", book_titles)
-        selected_book = next(b for b in st.session_state["books_list"] if b["Title"] == selected_title)
-
-        new_title = st.text_input("Edit Title", value=selected_book["Title"])
-        new_year = st.number_input("Edit Publication Year", value=selected_book["Year"], min_value=1450, max_value=2100)
-
-        col_save, col_del = st.columns([1, 1])
-        with col_save:
-            if st.button("Save Changes", use_container_width=True):
-                selected_book["Title"] = new_title
-                selected_book["Year"] = int(new_year)
-                st.success(f"Details updated for Book ID: {selected_book['BookID']}")
-                st.rerun()
-        with col_del:
-            if st.button("Delete Book", use_container_width=True, type="primary"):
-                st.warning("⚠️ Cannot delete book: Physical copies or active loan history exist in the database.")
+    page_header("THE CATALOGUE", "The book collection", "Browse the shelves, add new titles, and maintain your catalogue. All changes are saved to MySQL.")
+    browse, add, manage = st.tabs(["✦ Browse the shelves", "＋ Add a volume", "⚙ Manage titles"])
+    with browse:
+        term=st.text_input("Search the catalogue",placeholder="Title, ISBN, author, or category",key="catalogue_search")
+        try:
+            rows=db.book_list(term or None)
+            st.caption(f"{len(rows)} title(s) found")
+            if rows:
+                for row in rows: book_card(row)
+            else: st.markdown("<div class='empty-state'>No matching volumes. Try another search or add a title.</div>",unsafe_allow_html=True)
+        except Exception as exc: st.error(f"Could not load the catalogue: {exc}")
+    with add:
+        st.markdown("<div class='section-heading'>Add a volume to the shelves</div>",unsafe_allow_html=True)
+        try:
+            # Quick-create reference records here so users are not forced to leave the book workflow.
+            with st.expander("＋ Add an author, publisher, or category first"):
+                quick_author, quick_publisher, quick_category = st.tabs(["New author", "New publisher", "New category"])
+                with quick_author:
+                    with st.form("quick_add_author", clear_on_submit=True):
+                        qa_name = st.text_input("Author name *", key="quick_author_name")
+                        qa_nationality = st.text_input("Nationality (optional)", key="quick_author_nationality")
+                        qa_submit = st.form_submit_button("Save author")
+                    if qa_submit:
+                        if not qa_name.strip(): st.error("Enter an author name.")
+                        else:
+                            db.add_author(qa_name.strip(), qa_nationality.strip())
+                            st.success("Author saved. The author list will refresh.")
+                            st.rerun()
+                with quick_publisher:
+                    with st.form("quick_add_publisher", clear_on_submit=True):
+                        qp_name = st.text_input("Publisher name *", key="quick_publisher_name")
+                        qp_city = st.text_input("City (optional)", key="quick_publisher_city")
+                        qp_submit = st.form_submit_button("Save publisher")
+                    if qp_submit:
+                        if not qp_name.strip(): st.error("Enter a publisher name.")
+                        else:
+                            db.add_publisher(qp_name.strip(), qp_city.strip())
+                            st.success("Publisher saved. The publisher list will refresh.")
+                            st.rerun()
+                with quick_category:
+                    with st.form("quick_add_category", clear_on_submit=True):
+                        qc_name = st.text_input("Category name *", key="quick_category_name")
+                        qc_submit = st.form_submit_button("Save category")
+                    if qc_submit:
+                        if not qc_name.strip(): st.error("Enter a category name.")
+                        else:
+                            db.add_category(qc_name.strip())
+                            st.success("Category saved. The category list will refresh.")
+                            st.rerun()
+            pubs,cats,authors=db.list_publishers(),db.list_categories(),db.list_authors()
+            if not pubs or not cats:
+                st.warning("Before adding a book, add at least one publisher and one category in Collection Setup.")
+            else:
+                with st.form("add_book_form",clear_on_submit=True):
+                    title=st.text_input("Book title *"); isbn=st.text_input("ISBN *")
+                    c1,c2=st.columns(2)
+                    with c1: year=st.number_input("Publication year",min_value=1450,max_value=2100,value=2024,step=1)
+                    with c2: copies=st.number_input("Physical copies",min_value=0,max_value=500,value=1,step=1)
+                    publisher=st.selectbox("Publisher *",pubs,format_func=lambda x:x['PublisherName'])
+                    category=st.selectbox("Category *",cats,format_func=lambda x:x['CategoryName'])
+                    chosen=st.multiselect("Author(s)",authors,format_func=lambda x:x['AuthorName'])
+                    submit=st.form_submit_button("Add to the catalogue",use_container_width=True)
+                if submit:
+                    if not title.strip() or not isbn.strip(): st.error("Title and ISBN are required.")
+                    else:
+                        new_id=db.add_book(isbn,title,int(year),publisher['PublisherID'],category['CategoryID'],[a['AuthorID'] for a in chosen],int(copies))
+                        st.success(f"Volume added successfully · Book ID {new_id}"); st.rerun()
+        except Exception as exc: st.error(f"Could not prepare the form: {exc}")
+    with manage:
+        try:
+            rows=db.book_list()
+            if not rows: st.info("There are no titles to manage yet.")
+            else:
+                selected=st.selectbox("Choose a title",rows,format_func=lambda x:f"{x['BookID']} · {x['Title']}")
+                st.markdown("<div class='paper-card'>Only title and publication year can be edited here. Titles with loan history are protected from deletion by the backend.</div>",unsafe_allow_html=True)
+                with st.form("edit_book_form"):
+                    title=st.text_input("Title",value=selected['Title'])
+                    year_val=selected.get('PublicationYear') or 2024
+                    year=st.number_input("Publication year",min_value=1450,max_value=2100,value=int(year_val),step=1)
+                    update=st.form_submit_button("Save changes")
+                if update:
+                    if not title.strip(): st.error("Title cannot be empty.")
+                    else: db.update_book(selected['BookID'],title.strip(),int(year)); st.success("Title updated."); st.rerun()
+                confirm=st.checkbox("I understand deletion cannot be undone",key="confirm_delete_book")
+                if st.button("Delete selected title",disabled=not confirm):
+                    try: db.delete_book(selected['BookID']); st.success("Title deleted."); st.rerun()
+                    except Exception as exc: st.error(str(exc))
+        except Exception as exc: st.error(f"Could not load titles: {exc}")
