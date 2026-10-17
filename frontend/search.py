@@ -1,35 +1,16 @@
 import streamlit as st
-import pandas as pd
+from backend import db
+from frontend.styles import page_header, book_card
+
 
 def render_search():
-    st.title("🔍 Search Catalog")
-    st.write("Lookup books across titles, authors, publishers, or categories.")
-
-    search_query = st.text_input("Enter search keywords...", placeholder="e.g., Algorithms, Kernighan, Database, Pearson")
-
-    all_books = [
-        {"BookID": 101, "Title": "The C Programming Language", "Author": "Brian Kernighan", "Category": "Programming", "Publisher": "Pearson", "Year": 1988, "Status": "Available"},
-        {"BookID": 102, "Title": "Introduction to Algorithms", "Author": "Thomas Cormen", "Category": "Programming", "Publisher": "McGraw Hill", "Year": 2022, "Status": "Issued"},
-        {"BookID": 103, "Title": "Database System Concepts", "Author": "Abraham Silberschatz", "Category": "Database Systems", "Publisher": "McGraw Hill", "Year": 2019, "Status": "Available"},
-        {"BookID": 104, "Title": "Clean Code", "Author": "Robert Martin", "Category": "Programming", "Publisher": "Pearson", "Year": 2008, "Status": "Available"},
-        {"BookID": 105, "Title": "Mathematics for Engineers", "Author": "R. D. Sharma", "Category": "Mathematics", "Publisher": "Pearson", "Year": 2023, "Status": "Available"},
-        {"BookID": 106, "Title": "The Pragmatic Programmer", "Author": "Robert Martin", "Category": "Programming", "Publisher": "OReilly Media", "Year": 2019, "Status": "Maintenance"}
-    ]
-
-    df = pd.DataFrame(all_books)
-
-    if search_query.strip():
-        filtered_df = df[
-            df["Title"].str.contains(search_query, case=False, na=False) |
-            df["Author"].str.contains(search_query, case=False, na=False) |
-            df["Category"].str.contains(search_query, case=False, na=False) |
-            df["Publisher"].str.contains(search_query, case=False, na=False)
-        ]
-        if not filtered_df.empty:
-            st.dataframe(filtered_df, use_container_width=True, hide_index=True)
-            st.caption(f"Showing {len(filtered_df)} matching record(s).")
-        else:
-            st.warning(f"No results found for '{search_query}'.")
-    else:
-        st.dataframe(df, use_container_width=True, hide_index=True)
-        st.caption("Showing complete collection (6 titles registered).")
+    page_header("THE READING NOOK", "Discover a volume", "Search by title, author, ISBN, or category. The results come directly from your catalogue in MySQL.")
+    query=st.text_input("What would you like to find?",placeholder="Try a title, author, ISBN, or category…",key="discover_query")
+    try:
+        rows=db.book_list(query.strip() or None)
+        if query.strip(): st.caption(f"{len(rows)} result(s) for “{query.strip()}”")
+        elif rows: st.caption(f"Showing all {len(rows)} titles")
+        if rows:
+            for row in rows: book_card(row)
+        else: st.markdown("<div class='empty-state'>No matching titles found. Try fewer words or check the spelling.</div>",unsafe_allow_html=True)
+    except Exception as exc: st.error(f"Search could not reach the database: {exc}")
