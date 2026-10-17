@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from backend import db
 
 def render_books():
     st.title("📖 Book Catalog Management")
