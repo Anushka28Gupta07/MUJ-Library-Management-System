@@ -1,4 +1,3 @@
-
 # 📚 Library Management System (LMS)
 
 A database-driven Library Management System built using **MySQL, Python, and Streamlit** for the CSC2131 RDBMS laboratory project. It demonstrates relational database design, data integrity, book circulation, member management, and reporting.
@@ -47,7 +46,7 @@ The database is named `LibraryManagementDB` and contains eight relational tables
 ## 📁 Repository Structure
 
 ```text
-library-management-system/
+MUJ-Library-Management-System/
 ├── backend/
 │   ├── __init__.py
 │   ├── config.py
@@ -57,78 +56,18 @@ library-management-system/
 │   ├── sample_data.sql
 │   └── queries.sql
 ├── frontend/
-│   └── app.py
+│   ├── Banner.jpeg
+│   ├── app.py
+│   ├── books.py
+│   ├── dashboard.py
+│   ├── issue_return.py
+│   ├── login.py
+│   ├── master_data.py
+│   ├── members.py
+│   ├── reports.py
+│   ├── search.py
+│   ├── settings_page.py
+│   └── styles.py
+├── .gitignore
+├── README.md
 └── requirements.txt
-```
-
-## 🛠️ Technologies Used
-
-* **Database:** MySQL
-* **Programming Language:** Python
-* **Frontend:** Streamlit
-* **Database Connector:** MySQL Connector/Python
-* **Version Control:** Git and GitHub
-
-## 🚀 Setup and Installation
-
-### Prerequisites
-
-Install Python and MySQL Server on your computer.
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/vrindainink/library-management-system.git
-cd library-management-system
-```
-
-### 2. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Create and populate the database
-
-Open MySQL Workbench or a MySQL command-line client and execute the SQL files in this order:
-
-1. `database/schema.sql`
-2. `database/sample_data.sql`
-
-Execute `database/queries.sql` separately when you want to explore the project's SQL queries.
-
-### 4. Configure the database connection
-
-The application reads these environment variables:
-
-* `DB_HOST` — defaults to `localhost`
-* `DB_USER` — defaults to `root`
-* `DB_PASSWORD` — defaults to an empty password
-* `DB_NAME` — defaults to `LibraryManagementDB`
-
-Set them to match your local MySQL configuration.
-
-### 5. Launch the application
-
-Run this command from the repository root:
-
-```bash
-streamlit run frontend/app.py
-```
-
-Streamlit will provide a local URL where you can access the application.
-
-## 🔐 Demo Login
-
-* **Username:** `admin`
-* **Password:** `admin123`
-
-These are demonstration credentials defined in the application code. Change them before using the application beyond a classroom demonstration.
-
-## 🎓 Project Purpose
-
-This project demonstrates the practical application of relational database concepts, SQL operations, integrity constraints, transaction handling, and Python–MySQL integration in a library environment.
-
----
-
-**Academic Project:** CSC2131 — Relational Database Management Systems (RDBMS)
